@@ -40,10 +40,11 @@ public class AccountService(
             return RegistrationOutcomes.EmailAlreadyExists;
         }
 
-        var user = new User()
+        var user = new User
         {
+            UserName = request.UserName,
             Email = request.Email,
-            UserName = request.Email,
+            UserType = request.UserType
         };
 
         var result = await userManager.CreateAsync(user, request.Password);
