@@ -9,7 +9,6 @@ using AuthenticationService.DTOs.Responses;
 using AuthenticationService.Entities;
 using AuthenticationService.Enums;
 using AuthenticationService.Interfaces;
-using AuthenticationService.Interfaces.Repositories;
 using AuthenticationService.Interfaces.Services;
 using AuthenticationService.Settings;
 using AutoMapper;
@@ -17,7 +16,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Extensions;
-
 
 namespace AuthenticationService.Services;
 
@@ -28,8 +26,6 @@ public class AccountService(
     UserDbContext dbContext,
     IEmailService emailService,
     IOptions<AppRootSettings> appRootOptions,
-    ICustomerRepository customerRepository,
-    IVendorRepository vendorRepository,
     IMapper mapper,
     ILogger<AccountService> logger)
     : IAccountService
@@ -57,37 +53,35 @@ public class AccountService(
         }
 
         var userType = request.UserType;
-
-        var role = userType == UserType.Customer ? Roles.Customer : Roles.Vendor;
+        var role = userType == UserType.User ? Roles.User : Roles.Creator;
         await userManager.AddToRoleAsync(user, role.ToString());
 
-        if (userType == UserType.Customer)
+        if (userType == UserType.User)
         {
-            var customer = new Customer()
+            var appUser = new AppUser()
             {
                 UserId = user.Id,
-                FullName = "",
-                Address = "",
-                PhoneNumber = ""
+                FullName = string.Empty,
+                Address = string.Empty,
+                PhoneNumber = string.Empty
             };
-            await dbContext.Customers.AddAsync(customer);
+            await dbContext.AppUsers.AddAsync(appUser);
         }
         else
         {
-            var vendor = new Vendor()
+            var creator = new Creator()
             {
                 UserId = user.Id,
-                BusinessName = "",
-                Address = "",
-                PhoneNumber = ""
+                BusinessName = string.Empty,
+                Address = string.Empty,
+                PhoneNumber = string.Empty
             };
-            await dbContext.Vendors.AddAsync(vendor);
+            await dbContext.Creators.AddAsync(creator);
         }
 
         await dbContext.SaveChangesAsync();
 
         var confirmationCode = await GenerateEmailConfirmationTokenAsync(user);
-        // For now, I will be sending the token row, but later it will be wrapped inside a frontend url
         var email = new Email()
         {
             Subject = "EMAIL CONFIRMATION",
@@ -101,15 +95,12 @@ public class AccountService(
         {
             await emailService.SendEmailAsync(email);
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            // if an error occurs after user creation, delete the user. customer or vendor should be deleted as well
-            // due to cascade
             await userManager.DeleteAsync(user);
             await dbContext.SaveChangesAsync();
             return RegistrationOutcomes.EmailCantBeSend;
         }
-
 
         return RegistrationOutcomes.Success;
     }
@@ -145,10 +136,8 @@ public class AccountService(
     public async Task<string> GenerateEmailConfirmationTokenAsync(User user)
     {
         var confirmationToken = await userManager.GenerateEmailConfirmationTokenAsync(user);
-
         var tokenBytes = Encoding.UTF8.GetBytes(confirmationToken);
         var encodedToken = WebEncoders.Base64UrlEncode(tokenBytes);
-
         return encodedToken;
     }
 
@@ -162,7 +151,6 @@ public class AccountService(
 
         var tokenBytes = WebEncoders.Base64UrlDecode(request.Token);
         var decodedToken = Encoding.UTF8.GetString(tokenBytes);
-
         var result = await userManager.ConfirmEmailAsync(user, decodedToken);
         return result.Succeeded ? ConfirmEmailOutcomes.Success : ConfirmEmailOutcomes.InvalidToken;
     }
@@ -190,7 +178,7 @@ public class AccountService(
         {
             await emailService.SendEmailAsync(email);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return RequestPasswordResetOutcomes.EmailCantBeSend;
         }
@@ -207,7 +195,6 @@ public class AccountService(
         }
 
         var decodedResetCode = Uri.UnescapeDataString(request.Token);
-
         var resetPasswordResult = await userManager.ResetPasswordAsync(user, decodedResetCode, request.Password);
         return resetPasswordResult.Succeeded
             ? ConfirmPasswordResetOutcomes.Success
@@ -228,7 +215,6 @@ public class AccountService(
         var handler = new JwtSecurityTokenHandler();
         var token = handler.ReadJwtToken(jwToken);
         var emailClaim = token.Claims.FirstOrDefault(c => c.Type == "email");
-
         return emailClaim?.Value;
     }
 
@@ -239,19 +225,16 @@ public class AccountService(
         {
             return CheckForPolicyOutcomes.Failure;
         }
-        
         var email = GetUserEmailFromToken(request.Token);
         if (string.IsNullOrEmpty(email))
         {
             return CheckForPolicyOutcomes.EmailNotConfirmed;
         }
-        
         var user = userManager.FindByEmailAsync(email).Result;
         if ((user == null || !user.EmailConfirmed) && requiredRole != Roles.Admin)
         {
             return CheckForPolicyOutcomes.EmailNotConfirmed;
         }
-
         var roles = GetUserRoles(request.Token);
         foreach (var role in roles)
         {
@@ -260,18 +243,17 @@ public class AccountService(
                 return CheckForPolicyOutcomes.Success;
             }
         }
-
         return CheckForPolicyOutcomes.Failure;
     }
 
-    public CheckForPolicyOutcomes CheckForCustomerPolicy(CheckForPolicyRequest request)
+    public CheckForPolicyOutcomes CheckForUserPolicy(CheckForPolicyRequest request)
     {
-        return CheckForPolicy(request, Roles.Customer);
+        return CheckForPolicy(request, Roles.User);
     }
 
-    public CheckForPolicyOutcomes CheckForVendorPolicy(CheckForPolicyRequest request)
+    public CheckForPolicyOutcomes CheckForCreatorPolicy(CheckForPolicyRequest request)
     {
-        return CheckForPolicy(request, Roles.Vendor);
+        return CheckForPolicy(request, Roles.Creator);
     }
 
     public CheckForPolicyOutcomes CheckForAdminPolicy(CheckForPolicyRequest request)
@@ -286,62 +268,78 @@ public class AccountService(
         {
             return (GetUserInfoOutcomes.EmailNotFound, null);
         }
-    
         var roles = await userManager.GetRolesAsync(user);
         var role = roles.FirstOrDefault();
-        switch (role){
-            case nameof(Roles.Admin): return (GetUserInfoOutcomes.UserIsAdmin, null);
-            case nameof(Roles.Customer):
-                var customer = await customerRepository.GetByIdAsync(user.Id);
-                return customer == null
-                    ? (GetUserInfoOutcomes.CustomerNotInitialized, null)
-                    : (GetUserInfoOutcomes.Success, mapper.Map<GetCustomerResponse>(customer));
-            case nameof(Roles.Vendor):
-                var vendor = await vendorRepository.GetByIdAsync(user.Id);
-                return vendor == null
-                    ? (GetUserInfoOutcomes.VendorNotInitialized, null)
-                    : (GetUserInfoOutcomes.Success, mapper.Map<GetVendorResponse>(vendor));
-            default: return (GetUserInfoOutcomes.UnknownError, null);
+        switch (role)
+        {
+            case nameof(Roles.Admin):
+                return (GetUserInfoOutcomes.UserIsAdmin, null);
+            case nameof(Roles.User):
+                var appUser = await dbContext.AppUsers.FindAsync(user.Id);
+                return appUser == null
+                    ? (GetUserInfoOutcomes.UserNotInitialized, null)
+                    : (GetUserInfoOutcomes.Success, mapper.Map<UpdateUserRequest>(appUser));
+            case nameof(Roles.Creator):
+                var creator = await dbContext.Creators.FindAsync(user.Id);
+                return creator == null
+                    ? (GetUserInfoOutcomes.CreatorNotInitialized, null)
+                    : (GetUserInfoOutcomes.Success, mapper.Map<UpdateCreatorRequest>(creator));
+            default:
+                return (GetUserInfoOutcomes.UserNotInitialized, null);
         }
     }
 
-    public async Task<UpdateUserInfoOutcomes> UpdateCustomerInfo(string email, UpdateUserRequest request, string expectedRole)
+    public async Task<UpdateUserInfoOutcomes> UpdateUserInfo(string email, UpdateUserRequest request, string expectedRole)
     {
-        var isValid = tokenService.IsTokenValid(request.JwToken);
-        if (!isValid)
-        {
-            return UpdateUserInfoOutcomes.InvalidToken;
-        }
         var user = await userManager.FindByEmailAsync(email);
         if (user == null)
         {
             return UpdateUserInfoOutcomes.EmailNotFound;
         }
-        
         var roles = await userManager.GetRolesAsync(user);
         var role = roles.FirstOrDefault();
-
         if (role != expectedRole)
         {
             return UpdateUserInfoOutcomes.WrongUserType;
         }
-        
-        switch (role)
+        if (role == nameof(Roles.User))
         {
-            case nameof(Roles.Admin): return UpdateUserInfoOutcomes.UserIsAdmin;
-            case nameof(Roles.Customer):
-                var customer = mapper.Map<UpdateCustomerRequest, Customer>((UpdateCustomerRequest) request);
-                customer.UserId = user.Id;
-                customer.User = user;
-                await customerRepository.UpdateAsync(customer);
-                return UpdateUserInfoOutcomes.Success;
-            case nameof(Roles.Vendor):
-                var vendor = mapper.Map<UpdateVendorRequest, Vendor>((UpdateVendorRequest) request);
-                vendor.UserId = user.Id;
-                vendor.User = user;
-                await vendorRepository.UpdateAsync(vendor);
-                return UpdateUserInfoOutcomes.Success;
-            default: return UpdateUserInfoOutcomes.UnknownError;
+            var appUser = await dbContext.AppUsers.FindAsync(user.Id);
+            if (appUser == null) return UpdateUserInfoOutcomes.EmailNotFound;
+            appUser.FullName = request.FullName;
+            appUser.Address = request.Address;
+            appUser.PhoneNumber = request.PhoneNumber;
+            dbContext.AppUsers.Update(appUser);
+            await dbContext.SaveChangesAsync();
+            return UpdateUserInfoOutcomes.Success;
         }
+        return UpdateUserInfoOutcomes.WrongUserType;
+    }
+
+    public async Task<UpdateUserInfoOutcomes> UpdateCreatorInfo(string email, UpdateCreatorRequest request, string expectedRole)
+    {
+        var user = await userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            return UpdateUserInfoOutcomes.EmailNotFound;
+        }
+        var roles = await userManager.GetRolesAsync(user);
+        var role = roles.FirstOrDefault();
+        if (role != expectedRole)
+        {
+            return UpdateUserInfoOutcomes.WrongUserType;
+        }
+        if (role == nameof(Roles.Creator))
+        {
+            var creator = await dbContext.Creators.FindAsync(user.Id);
+            if (creator == null) return UpdateUserInfoOutcomes.EmailNotFound;
+            creator.BusinessName = request.BusinessName;
+            creator.Address = request.Address;
+            creator.PhoneNumber = request.PhoneNumber;
+            dbContext.Creators.Update(creator);
+            await dbContext.SaveChangesAsync();
+            return UpdateUserInfoOutcomes.Success;
+        }
+        return UpdateUserInfoOutcomes.WrongUserType;
     }
 }

@@ -1,6 +1,13 @@
-﻿namespace AuthenticationService.Enums;
+﻿using System.Text.Json.Serialization;
 
+namespace AuthenticationService.Enums;
+
+[JsonConverter(typeof(JsonStringEnumConverter<GetUserInfoOutcomes>))]
 public enum GetUserInfoOutcomes
 {
-    Success, EmailNotFound, UserIsAdmin, UnknownError, CustomerNotInitialized, VendorNotInitialized
+    Success,
+    EmailNotFound,
+    UserIsAdmin,
+    UserNotInitialized,
+    CreatorNotInitialized
 }

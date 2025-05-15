@@ -14,6 +14,7 @@ public class User : IdentityUser
         return this.RefreshTokens?.Find(x => x.Token == token) != null;
     }
 
-    public Vendor? Vendor { get; set; }
-    public Customer? Customer { get; set; }
+    public UserType UserType { get; set; }
+    public Creator? Creator { get; set; }
+    public AppUser? AppUser { get; set; }
 }

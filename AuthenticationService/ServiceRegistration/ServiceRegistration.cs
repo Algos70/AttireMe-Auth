@@ -32,8 +32,5 @@ public static class ServiceRegistration
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IEmailService, EmailService>();
-
-        services.AddScoped<ICustomerRepository, CustomerRepository>();
-        services.AddScoped<IVendorRepository, VendorRepository>();
     }
 }

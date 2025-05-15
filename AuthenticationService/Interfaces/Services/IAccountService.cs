@@ -11,20 +11,13 @@ public interface IAccountService
     public Task<(AuthenticationOutcomes, AuthenticationResponse?)> AuthenticateAsync(AuthenticationRequest request);
     public Task<ConfirmEmailOutcomes> ConfirmEmailAsync(ConfirmEmailRequest request);
     public Task<RequestPasswordResetOutcomes> RequestPasswordReset(PasswordResetRequest request);
-
     public Task<ConfirmPasswordResetOutcomes> ConfirmPasswordReset(ConfirmPasswordResetRequest request);
-
     public IList<string> GetUserRoles(string jwToken);
-
     public CheckForPolicyOutcomes CheckForPolicy(CheckForPolicyRequest request, Roles requiredRole);
-
-    public CheckForPolicyOutcomes CheckForCustomerPolicy(CheckForPolicyRequest request);
-
-    public CheckForPolicyOutcomes CheckForVendorPolicy(CheckForPolicyRequest request);
-
+    public CheckForPolicyOutcomes CheckForUserPolicy(CheckForPolicyRequest request);
+    public CheckForPolicyOutcomes CheckForCreatorPolicy(CheckForPolicyRequest request);
     public CheckForPolicyOutcomes CheckForAdminPolicy(CheckForPolicyRequest request);
-
     public Task<(GetUserInfoOutcomes, IGetUserResponse?)> GetUserInfo(string email);
-
-    public Task<UpdateUserInfoOutcomes> UpdateCustomerInfo(string email, UpdateUserRequest request, string expectedRole);
+    public Task<UpdateUserInfoOutcomes> UpdateUserInfo(string email, UpdateUserRequest request, string expectedRole);
+    public Task<UpdateUserInfoOutcomes> UpdateCreatorInfo(string email, UpdateCreatorRequest request, string expectedRole);
 }

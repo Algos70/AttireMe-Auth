@@ -111,28 +111,28 @@ public class AuthenticationController(IAccountService accountService, ITokenServ
         };
     }
 
-    [HttpPost("/customer-policy")]
-    public  IActionResult CheckForCustomerPolicy([FromBody] CheckForPolicyRequest request)
+    [HttpPost("/user-policy")]
+    public IActionResult CheckForUserPolicy([FromBody] CheckForPolicyRequest request)
     {
-        var status = accountService.CheckForCustomerPolicy(request);
+        var status = accountService.CheckForUserPolicy(request);
         return status switch
         {
             CheckForPolicyOutcomes.Failure => StatusCode(StatusCodes.Status401Unauthorized, 
-                new ProblemDetails { Detail = "Does not belong to customer policy."}),
+                new ProblemDetails { Detail = "Does not belong to user policy."}),
             CheckForPolicyOutcomes.Success => Ok(),
             _ => StatusCode(StatusCodes.Status500InternalServerError,
                 new ProblemDetails { Detail = "Unexpected error." })
         };
     }
     
-    [HttpPost("/vendor-policy")]
-    public  IActionResult CheckForVendorPolicy([FromBody] CheckForPolicyRequest request)
+    [HttpPost("/creator-policy")]
+    public IActionResult CheckForCreatorPolicy([FromBody] CheckForPolicyRequest request)
     {
-        var status = accountService.CheckForVendorPolicy(request);
+        var status = accountService.CheckForCreatorPolicy(request);
         return status switch
         {
             CheckForPolicyOutcomes.Failure => StatusCode(StatusCodes.Status401Unauthorized, 
-                new ProblemDetails { Detail = "Does not belong to vendor policy."}),
+                new ProblemDetails { Detail = "Does not belong to creator policy."}),
             CheckForPolicyOutcomes.Success => Ok(),
             _ => StatusCode(StatusCodes.Status500InternalServerError,
                 new ProblemDetails { Detail = "Unexpected error." })
@@ -140,7 +140,7 @@ public class AuthenticationController(IAccountService accountService, ITokenServ
     }
     
     [HttpPost("/admin-policy")]
-    public  IActionResult CheckForAdminPolicy([FromBody] CheckForPolicyRequest request)
+    public IActionResult CheckForAdminPolicy([FromBody] CheckForPolicyRequest request)
     {
         var status = accountService.CheckForAdminPolicy(request);
         return status switch
@@ -163,20 +163,20 @@ public class AuthenticationController(IAccountService accountService, ITokenServ
                 new ProblemDetails { Detail = "Email not found. There is no such user" }),
             GetUserInfoOutcomes.UserIsAdmin => StatusCode(StatusCodes.Status404NotFound,
                 new ProblemDetails { Detail = "Admin users don't have user details." }),
-            GetUserInfoOutcomes.CustomerNotInitialized => StatusCode(StatusCodes.Status404NotFound, new ProblemDetails
-                { Detail = "Customer is not initialized due to unknown reason." }),
-            GetUserInfoOutcomes.VendorNotInitialized => StatusCode(StatusCodes.Status404NotFound, new ProblemDetails
-                { Detail = "Vendor is not initialized due to unknown reason." }),
+            GetUserInfoOutcomes.UserNotInitialized => StatusCode(StatusCodes.Status404NotFound, new ProblemDetails
+                { Detail = "User is not initialized due to unknown reason." }),
+            GetUserInfoOutcomes.CreatorNotInitialized => StatusCode(StatusCodes.Status404NotFound, new ProblemDetails
+                { Detail = "Creator is not initialized due to unknown reason." }),
             GetUserInfoOutcomes.Success => Ok(response),
             _ => StatusCode(StatusCodes.Status500InternalServerError,
                 new ProblemDetails { Detail = "Unexpected error." })
         };
     }
 
-    [HttpPut("/customer/{email}")]
-    public async Task<IActionResult> UpdateCustomerInfo([FromRoute] string email, [FromBody] UpdateCustomerRequest request)
+    [HttpPut("/user/{email}")]
+    public async Task<IActionResult> UpdateUserInfo([FromRoute] string email, [FromBody] UpdateUserRequest request)
     {
-        var status = await accountService.UpdateCustomerInfo(email, request, "Customer");
+        var status = await accountService.UpdateUserInfo(email, request, "User");
         return status switch
         {
             UpdateUserInfoOutcomes.EmailNotFound => StatusCode(StatusCodes.Status404NotFound,
@@ -191,10 +191,10 @@ public class AuthenticationController(IAccountService accountService, ITokenServ
         };
     }
     
-    [HttpPut("/vendor/{email}")]
-    public async Task<IActionResult> UpdateVendorInfo([FromRoute] string email, [FromBody] UpdateVendorRequest request)
+    [HttpPut("/creator/{email}")]
+    public async Task<IActionResult> UpdateCreatorInfo([FromRoute] string email, [FromBody] UpdateCreatorRequest request)
     {
-        var status = await accountService.UpdateCustomerInfo(email, request, "Vendor");
+        var status = await accountService.UpdateCreatorInfo(email, request, "Creator");
         return status switch
         {
             UpdateUserInfoOutcomes.EmailNotFound => StatusCode(StatusCodes.Status404NotFound,
@@ -202,7 +202,7 @@ public class AuthenticationController(IAccountService accountService, ITokenServ
             UpdateUserInfoOutcomes.UserIsAdmin => StatusCode(StatusCodes.Status404NotFound,
                 new ProblemDetails { Detail = "Admin users don't have user details." }),
             UpdateUserInfoOutcomes.WrongUserType => StatusCode(StatusCodes.Status403Forbidden,
-                new ProblemDetails { Detail = "A customer can't be updated with vendor info and vice versa"}),
+                new ProblemDetails { Detail = "A user can't be updated with creator info and vice versa"}),
             UpdateUserInfoOutcomes.InvalidToken => StatusCode(StatusCodes.Status401Unauthorized,
                 new ProblemDetails { Detail = "Invalid json web token" }),
             UpdateUserInfoOutcomes.Success => Ok(),

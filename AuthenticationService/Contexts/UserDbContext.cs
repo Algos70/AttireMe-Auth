@@ -8,23 +8,23 @@ namespace AuthenticationService.Contexts;
 
 public class UserDbContext(DbContextOptions<UserDbContext> options) : IdentityDbContext<User>(options)
 {
-    public DbSet<Vendor> Vendors { get; set; }
-    public DbSet<Customer> Customers { get; set; }
+    public DbSet<Creator> Creators { get; set; }
+    public DbSet<AppUser> AppUsers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
         builder.Entity<User>().ToTable("Users");
         builder.Entity<User>()
-            .HasOne(u => u.Vendor)
+            .HasOne(u => u.Creator)
             .WithOne(v => v.User)
-            .HasForeignKey<Vendor>(v => v.UserId)
+            .HasForeignKey<Creator>(v => v.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Entity<User>()
-            .HasOne(u => u.Customer)
+            .HasOne(u => u.AppUser)
             .WithOne(c => c.User)
-            .HasForeignKey<Customer>(c => c.UserId)
+            .HasForeignKey<AppUser>(c => c.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Entity<RefreshToken>().ToTable("RefreshTokens");
@@ -35,7 +35,7 @@ public class UserDbContext(DbContextOptions<UserDbContext> options) : IdentityDb
     {
         builder.Entity<IdentityRole>().HasData(
             new IdentityRole() { Name = "Admin", ConcurrencyStamp = "1", NormalizedName = "ADMIN" },
-            new IdentityRole() { Name = "Vendor", ConcurrencyStamp = "2", NormalizedName = "VENDOR" },
-            new IdentityRole() { Name = "Customer", ConcurrencyStamp = "3", NormalizedName = "CUSTOMER" });
+            new IdentityRole() { Name = "Creator", ConcurrencyStamp = "2", NormalizedName = "CREATOR" },
+            new IdentityRole() { Name = "User", ConcurrencyStamp = "3", NormalizedName = "USER" });
     }
 }
