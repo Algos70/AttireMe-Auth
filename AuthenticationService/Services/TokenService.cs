@@ -47,6 +47,7 @@ public class TokenService(UserManager<User> userManager, IOptions<JwtSettings> j
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim("uid", user.Id),
+            new Claim("username", user.UserName),
         }.Union(roleClaims);
 
         var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));

@@ -219,6 +219,14 @@ public class AccountService(
         return emailClaim?.Value;
     }
 
+    public string? GetUsernameFromToken(string jwToken)
+    {
+        var handler = new JwtSecurityTokenHandler();
+        var token = handler.ReadJwtToken(jwToken);
+        var usernameClaim = token.Claims.FirstOrDefault(c => c.Type == "username");
+        return usernameClaim?.Value;
+    }
+
     public CheckForPolicyOutcomes CheckForPolicy(CheckForPolicyRequest request, Roles requiredRole)
     {
         var isValid = tokenService.IsTokenValid(request.Token);
