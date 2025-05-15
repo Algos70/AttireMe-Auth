@@ -17,14 +17,7 @@ public static class ServiceRegistration
     {
         services.AddDbContext<UserDbContext>(options =>
         {
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"),
-                npgsqlOptions =>
-                {
-                    npgsqlOptions.EnableRetryOnFailure(
-                        maxRetryCount: 10,
-                        maxRetryDelay: TimeSpan.FromSeconds(30),
-                        errorCodesToAdd: null);
-                });
+            options.UseSqlite(configuration.GetConnectionString("DefaultConnection"));
         });
         services.AddIdentity<User, IdentityRole>().AddEntityFrameworkStores<UserDbContext>()
             .AddDefaultTokenProviders();
