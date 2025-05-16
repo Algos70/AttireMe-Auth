@@ -27,10 +27,13 @@ public class AccountService(
     IEmailService emailService,
     IOptions<AppRootSettings> appRootOptions,
     IMapper mapper,
-    ILogger<AccountService> logger)
+    ILogger<AccountService> logger,
+    IBackendService backendService)
     : IAccountService
 {
     private readonly AppRootSettings _appRootSettings = appRootOptions.Value;
+    private readonly IBackendService _backendService = backendService;
+    private readonly ILogger<AccountService> _logger = logger;
 
     public async Task<RegistrationOutcomes> RegisterAsync(RegisterRequest request)
     {
@@ -153,7 +156,51 @@ public class AccountService(
         var tokenBytes = WebEncoders.Base64UrlDecode(request.Token);
         var decodedToken = Encoding.UTF8.GetString(tokenBytes);
         var result = await userManager.ConfirmEmailAsync(user, decodedToken);
-        return result.Succeeded ? ConfirmEmailOutcomes.Success : ConfirmEmailOutcomes.InvalidToken;
+        
+        if (result.Succeeded)
+        {
+            try
+            {
+                // Get admin user
+                var adminUser = await userManager.FindByEmailAsync("admin@attireme.com");
+                if (adminUser == null)
+                {
+                    // Create admin user if it doesn't exist
+                    adminUser = new User
+                    {
+                        UserName = "admin",
+                        Email = "admin@attireme.com",
+                        EmailConfirmed = true
+                    };
+                    var adminResult = await userManager.CreateAsync(adminUser, "Admin123!");
+                    if (!adminResult.Succeeded)
+                    {
+                        _logger.LogError("Failed to create admin user");
+                        return ConfirmEmailOutcomes.Success; // Still return success for the original confirmation
+                    }
+                    await userManager.AddToRoleAsync(adminUser, Roles.Admin.ToString());
+                }
+
+                // Get admin token
+                var adminToken = await tokenService.GenerateJwToken(adminUser);
+                
+                // Get user's role and username
+                var roles = await userManager.GetRolesAsync(user);
+                var role = roles.FirstOrDefault() ?? "User";
+                
+                // Notify backend
+                await _backendService.NotifyUserConfirmedAsync(user.Email!, role, user.UserName!, adminToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to notify backend about confirmed user");
+                // Still return success for the original confirmation
+            }
+            
+            return ConfirmEmailOutcomes.Success;
+        }
+        
+        return ConfirmEmailOutcomes.InvalidToken;
     }
 
     public async Task<RequestPasswordResetOutcomes> RequestPasswordReset(PasswordResetRequest request)

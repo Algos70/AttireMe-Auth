@@ -28,7 +28,9 @@ public static class ServiceRegistration
         services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
         services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
         services.Configure<AppRootSettings>(configuration.GetSection("AppRootSettings"));
+        services.Configure<BackendSettings>(configuration.GetSection("BackendSettings"));
 
+        services.AddHttpClient<IBackendService, BackendService>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IEmailService, EmailService>();
