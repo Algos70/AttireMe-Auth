@@ -9,17 +9,11 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173") // Allow frontend URL
+            policy.AllowAnyOrigin()
                 .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
-            policy.WithOrigins("https://localhost:5173") // Allow frontend URL
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
+                .AllowAnyMethod();
         });
 });
-
 
 // Add json files
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
