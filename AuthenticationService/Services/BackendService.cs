@@ -26,12 +26,17 @@ public class BackendService : IBackendService
         try
         {
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
-            var response = await _httpClient.PostAsJsonAsync($"{_backendSettings.BackendUrl}/user", new 
+            
+            var requestData = new 
             { 
-                Email = email,
-                Role = role,
-                Username = username
-            });
+                email = email,
+                role = role.ToLowerInvariant(),
+                username = username
+            };
+
+            _logger.LogInformation("Sending user confirmation request to backend. Request data: {@RequestData}", requestData);
+            
+            var response = await _httpClient.PostAsJsonAsync($"{_backendSettings.BackendUrl}/user", requestData);
             
             if (!response.IsSuccessStatusCode)
             {
