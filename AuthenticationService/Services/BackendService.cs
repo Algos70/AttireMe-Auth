@@ -25,7 +25,7 @@ public class BackendService : IBackendService
     {
         try
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("", adminToken);
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
             var response = await _httpClient.PostAsJsonAsync($"{_backendSettings.BackendUrl}/user", new 
             { 
                 Email = email,
