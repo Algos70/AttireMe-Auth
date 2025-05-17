@@ -29,6 +29,7 @@ public static class ServiceRegistration
         services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
         services.Configure<AppRootSettings>(configuration.GetSection("AppRootSettings"));
         services.Configure<BackendSettings>(configuration.GetSection("BackendSettings"));
+        services.Configure<FrontendSettings>(configuration.GetSection("FrontendSettings"));
 
         services.AddHttpClient<IBackendService, BackendService>();
         services.AddScoped<IAccountService, AccountService>();
