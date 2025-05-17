@@ -203,13 +203,17 @@ public class AccountService(
         }
 
         var resetCode = await userManager.GeneratePasswordResetTokenAsync(user);
-        var encodedResetCode = Uri.EscapeDataString(resetCode);
+        var encodedResetCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(resetCode));
+        
         Debug.Assert(user.Email != null, "user.Email != null");
         var email = new Email()
         {
-            Subject = "RESET YOUR PASSWORD",
-            Body = $@"<p>This is your password reset code [{encodedResetCode}]</p>
-                       <p>If you didn't request this, please ignore this email.</p>",
+            Subject = "Reset Your AttireMe Password",
+            Body = $@"<h1>Password Reset Request</h1>
+                    <p>You have requested to reset your password. Please use the following code to reset your password:</p>
+                    <p style='font-size: 24px; font-weight: bold; letter-spacing: 2px; padding: 10px; background-color: #f5f5f5; display: inline-block;'>{encodedResetCode}</p>
+                    <p>If you didn't request this, please ignore this email and your password will remain unchanged.</p>
+                    <p>This code will expire in 24 hours.</p>",
             To = user.Email
         };
 
@@ -233,11 +237,19 @@ public class AccountService(
             return ConfirmPasswordResetOutcomes.EmailNotFound;
         }
 
-        var decodedResetCode = Uri.UnescapeDataString(request.Token);
-        var resetPasswordResult = await userManager.ResetPasswordAsync(user, decodedResetCode, request.Password);
-        return resetPasswordResult.Succeeded
-            ? ConfirmPasswordResetOutcomes.Success
-            : ConfirmPasswordResetOutcomes.UnsupportedPasswordFormat;
+        try
+        {
+            var tokenBytes = WebEncoders.Base64UrlDecode(request.Token);
+            var decodedResetCode = Encoding.UTF8.GetString(tokenBytes);
+            var resetPasswordResult = await userManager.ResetPasswordAsync(user, decodedResetCode, request.Password);
+            return resetPasswordResult.Succeeded
+                ? ConfirmPasswordResetOutcomes.Success
+                : ConfirmPasswordResetOutcomes.UnsupportedPasswordFormat;
+        }
+        catch (Exception)
+        {
+            return ConfirmPasswordResetOutcomes.UnsupportedPasswordFormat;
+        }
     }
 
     public IList<string> GetUserRoles(string jwToken)
