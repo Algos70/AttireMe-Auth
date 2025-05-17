@@ -9,12 +9,6 @@ using System.Net.Mail;
 
 namespace AuthenticationService.Services;
 
-public interface IEmailService
-{
-    Task SendEmailAsync(Email request);
-    Task SendConfirmationEmailAsync(string email, string token);
-}
-
 public class EmailService : IEmailService
 {
     private readonly MailSettings _mailSettings;
@@ -66,7 +60,7 @@ public class EmailService : IEmailService
             };
             email.Body = builder.ToMessageBody();
 
-            using var smtp = new SmtpClient();
+            using var smtp = new MailKit.Net.Smtp.SmtpClient();
             await smtp.ConnectAsync(_mailSettings.SmtpHost, _mailSettings.SmtpPort, SecureSocketOptions.StartTls);
             await smtp.AuthenticateAsync(_mailSettings.SmtpUser, _mailSettings.SmtpPass);
             await smtp.SendAsync(email);
@@ -79,7 +73,7 @@ public class EmailService : IEmailService
             _logger.LogError($"Null argument error: {ex.ParamName} - {ex.Message}");
             throw;
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             _logger.LogError($"Email sending failed: {ex.GetType().Name} - {ex.Message}");
             _logger.LogError($"Stack trace: {ex.StackTrace}");
@@ -93,23 +87,17 @@ public class EmailService : IEmailService
         {
             var confirmationLink = $"{_frontendSettings.FrontendUrl}/confirm-email?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}";
             
-            var mailMessage = new MailMessage
+            var emailMessage = new Email
             {
-                From = new MailAddress(_mailSettings.EmailFrom, _mailSettings.DisplayName),
+                To = email,
                 Subject = "Email Confirmation",
-                Body = $"Please confirm your email by clicking the following link: {confirmationLink}",
-                IsBodyHtml = true
-            };
-            
-            mailMessage.To.Add(email);
-
-            using var smtpClient = new SmtpClient(_mailSettings.SmtpHost, _mailSettings.SmtpPort)
-            {
-                Credentials = new System.Net.NetworkCredential(_mailSettings.SmtpUser, _mailSettings.SmtpPass),
-                EnableSsl = true
+                Body = $@"<h1>Welcome to AttireMe!</h1>
+                       <p>Please confirm your email by clicking the following link:</p>
+                       <p><a href='{confirmationLink}'>Confirm Email</a></p>
+                       <p>If you didn't request this, please ignore this email.</p>"
             };
 
-            await smtpClient.SendMailAsync(mailMessage);
+            await SendEmailAsync(emailMessage);
             _logger.LogInformation("Confirmation email sent successfully to {Email}", email);
         }
         catch (Exception ex)

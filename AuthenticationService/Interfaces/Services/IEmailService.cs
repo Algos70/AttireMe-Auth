@@ -4,5 +4,6 @@ namespace AuthenticationService.Interfaces.Services;
 
 public interface IEmailService
 {
-    public Task SendEmailAsync(Email request);
+    Task SendEmailAsync(Email request);
+    Task SendConfirmationEmailAsync(string email, string token);
 }

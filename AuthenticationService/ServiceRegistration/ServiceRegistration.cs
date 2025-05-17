@@ -34,6 +34,6 @@ public static class ServiceRegistration
         services.AddHttpClient<IBackendService, BackendService>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ITokenService, TokenService>();
-        services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<AuthenticationService.Interfaces.Services.IEmailService, EmailService>();
     }
 }

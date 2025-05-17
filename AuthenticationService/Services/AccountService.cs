@@ -85,19 +85,10 @@ public class AccountService(
 
         await dbContext.SaveChangesAsync();
 
-        var confirmationCode = await GenerateEmailConfirmationTokenAsync(user);
-        var email = new Email()
-        {
-            Subject = "EMAIL CONFIRMATION",
-            Body = $@"<h1>Welcome to our service!</h1>
-                       <p>This is your email confirmation code [{confirmationCode}], confirm before it expires!</p>
-                       <p>If you didn't request this, please ignore this email.</p>",
-            To = user.Email,
-        };
-
+        var confirmationToken = await GenerateEmailConfirmationTokenAsync(user);
         try
         {
-            await emailService.SendEmailAsync(email);
+            await emailService.SendConfirmationEmailAsync(user.Email!, confirmationToken);
         }
         catch (Exception)
         {
