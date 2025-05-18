@@ -28,11 +28,13 @@ public class AccountService(
     IOptions<AppRootSettings> appRootOptions,
     IMapper mapper,
     ILogger<AccountService> logger,
-    IBackendService backendService)
+    IBackendService backendService,
+    IStreamChatService streamChatService)
     : IAccountService
 {
     private readonly AppRootSettings _appRootSettings = appRootOptions.Value;
     private readonly IBackendService _backendService = backendService;
+    private readonly IStreamChatService _streamChatService = streamChatService;
     private readonly ILogger<AccountService> _logger = logger;
 
     public async Task<RegistrationOutcomes> RegisterAsync(RegisterRequest request)
@@ -115,6 +117,9 @@ public class AccountService(
             return (AuthenticationOutcomes.WrongPassword, null);
         }
 
+        var streamToken = await _streamChatService.GenerateTokenAsync(user.Id);
+
+
         var jwSecurityToken = await tokenService.GenerateJwToken(user);
         var refreshToken = tokenService.GenerateRefreshToken();
         user.RefreshTokens.Add(refreshToken);
@@ -124,6 +129,7 @@ public class AccountService(
         {
             RefreshToken = refreshToken.Token,
             JwToken = jwSecurityToken,
+            StreamChatToken = streamToken
         };
         return (AuthenticationOutcomes.Success, response);
     }
