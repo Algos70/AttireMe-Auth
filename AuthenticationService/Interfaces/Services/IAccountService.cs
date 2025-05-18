@@ -20,4 +20,5 @@ public interface IAccountService
     public Task<(GetUserInfoOutcomes, IGetUserResponse?)> GetUserInfo(string email);
     public Task<UpdateUserInfoOutcomes> UpdateUserInfo(string email, UpdateUserRequest request, string expectedRole);
     public Task<UpdateUserInfoOutcomes> UpdateCreatorInfo(string email, UpdateCreatorRequest request, string expectedRole);
+    public Task<IList<string>> GetAllCreatorUserIds();
 }

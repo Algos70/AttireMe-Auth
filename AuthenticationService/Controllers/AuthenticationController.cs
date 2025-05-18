@@ -210,4 +210,25 @@ public class AuthenticationController(IAccountService accountService, ITokenServ
                 new ProblemDetails { Detail = "Unexpected error." })
         };
     }
+
+    [HttpGet("/creators/{token}")]
+    public async Task<IActionResult> GetAllCreatorUserIds([FromRoute] string token)
+    {
+        if (string.IsNullOrEmpty(token))
+        {
+            return StatusCode(StatusCodes.Status401Unauthorized,
+                new ProblemDetails { Detail = "Invalid token in path" });
+        }
+
+        var userStatus = accountService.CheckForUserPolicy(new CheckForPolicyRequest { Token = token });
+        var creatorStatus = accountService.CheckForCreatorPolicy(new CheckForPolicyRequest { Token = token });
+        if (userStatus != CheckForPolicyOutcomes.Success && creatorStatus != CheckForPolicyOutcomes.Success)
+        {
+            return StatusCode(StatusCodes.Status401Unauthorized,
+                new ProblemDetails { Detail = "User is not authorized" });
+        }
+
+        var creatorIds = await accountService.GetAllCreatorUserIds();
+        return Ok(creatorIds);
+    }
 }

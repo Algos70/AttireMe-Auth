@@ -407,4 +407,10 @@ public class AccountService(
         }
         return UpdateUserInfoOutcomes.WrongUserType;
     }
+
+    public async Task<IList<string>> GetAllCreatorUserIds()
+    {
+        var creatorRole = await userManager.GetUsersInRoleAsync(Roles.Creator.ToString());
+        return creatorRole.Select(u => u.Id).ToList();
+    }
 }
