@@ -35,5 +35,6 @@ public static class ServiceRegistration
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<AuthenticationService.Interfaces.Services.IEmailService, EmailService>();
+        services.AddScoped<IFirebaseService, FirebaseService>();
     }
 }
