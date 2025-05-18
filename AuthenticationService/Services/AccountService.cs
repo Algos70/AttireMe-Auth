@@ -28,14 +28,12 @@ public class AccountService(
     IOptions<AppRootSettings> appRootOptions,
     IMapper mapper,
     ILogger<AccountService> logger,
-    IBackendService backendService,
-    IFirebaseService firebaseService)
+    IBackendService backendService)
     : IAccountService
 {
     private readonly AppRootSettings _appRootSettings = appRootOptions.Value;
     private readonly IBackendService _backendService = backendService;
     private readonly ILogger<AccountService> _logger = logger;
-    private readonly IFirebaseService _firebaseService = firebaseService;
 
     public async Task<RegistrationOutcomes> RegisterAsync(RegisterRequest request)
     {
@@ -122,15 +120,10 @@ public class AccountService(
         user.RefreshTokens.Add(refreshToken);
         await userManager.UpdateAsync(user);
         await dbContext.SaveChangesAsync();
-
-        // Generate Firebase custom token
-        var firebaseToken = await _firebaseService.CreateCustomTokenAsync(user.Id);
-
         var response = new AuthenticationResponse()
         {
             RefreshToken = refreshToken.Token,
             JwToken = jwSecurityToken,
-            FirebaseToken = firebaseToken
         };
         return (AuthenticationOutcomes.Success, response);
     }

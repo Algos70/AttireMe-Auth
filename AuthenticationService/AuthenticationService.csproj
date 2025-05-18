@@ -22,13 +22,6 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.11"/>
         <PackageReference Include="MimeKit" Version="4.11.0"/>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
-        <PackageReference Include="FirebaseAdmin" Version="2.4.0"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Update="attireme-chat-firebase-adminsdk-fbsvc-956c61fe4a.json">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
     </ItemGroup>
 
 </Project>
