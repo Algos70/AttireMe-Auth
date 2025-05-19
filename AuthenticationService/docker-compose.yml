@@ -4,18 +4,40 @@ services:
     container_name: attireme-authentication-service
     ports:
       - "8086:8086"
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Data Source=/data/AuthenticationService.db;
+      - ConnectionStrings__DefaultConnection=Host=postgres-auth;Database=attireme-authentication-service;Username=electi;Password=536051;Port=5432;Pooling=true;
       - ASPNETCORE_URLS=http://+:8086
       - BackendSettings__BackendUrl=http://attireme-be:9494
-    volumes:
-      - auth-db-data:/data
     networks:
       - app-network
 
-networks:
-  app-network:
+  postgres-auth:
+    image: postgres:16
+    container_name: postgres-auth
+    restart: always
+    environment:
+      POSTGRES_DB: attireme-authentication-service
+      POSTGRES_USER: electi
+      POSTGRES_PASSWORD: 536051
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U electi -d attireme-authentication-service" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
 
 volumes:
-  auth-db-data:
+  pgdata:
+
+networks:
+  app-network:
