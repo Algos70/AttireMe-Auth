@@ -348,7 +348,7 @@ public class AccountService(
                 var creator = await dbContext.Creators.FindAsync(user.Id);
                 return creator == null
                     ? (GetUserInfoOutcomes.CreatorNotInitialized, null)
-                    : (GetUserInfoOutcomes.Success, mapper.Map<UpdateCreatorRequest>(creator));
+                    : (GetUserInfoOutcomes.Success, mapper.Map<CreatorInfoResponse>(creator));
             default:
                 return (GetUserInfoOutcomes.UserNotInitialized, null);
         }
@@ -408,10 +408,10 @@ public class AccountService(
         return UpdateUserInfoOutcomes.WrongUserType;
     }
 
-    public async Task<IList<CreatorInfoResponse>> GetAllCreatorUserIds()
+    public async Task<IList<CreatorListResponse>> GetAllCreatorUserIds()
     {
         var creatorRole = await userManager.GetUsersInRoleAsync(Roles.Creator.ToString());
-        return creatorRole.Select(u => new CreatorInfoResponse
+        return creatorRole.Select(u => new CreatorListResponse
         {
             UserId = u.Id,
             Email = u.Email!

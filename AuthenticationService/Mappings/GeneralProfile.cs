@@ -19,5 +19,7 @@ public class GeneralProfile : Profile
         CreateMap<Creator, UpdateCreatorRequest>();
         CreateMap<AppUser, UserInfoResponse>()
             .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId));
+        CreateMap<Creator, CreatorInfoResponse>()
+            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId));
     }
 }
