@@ -231,4 +231,30 @@ public class AuthenticationController(IAccountService accountService, ITokenServ
         var creatorIds = await accountService.GetAllCreatorUserIds();
         return Ok(creatorIds);
     }
+
+    [HttpGet("/user-info/{userId}/{token}")]
+    public async Task<IActionResult> GetUserInfoById([FromRoute] string userId, [FromRoute] string token)
+    {
+        if (string.IsNullOrEmpty(token))
+        {
+            return StatusCode(StatusCodes.Status401Unauthorized,
+                new ProblemDetails { Detail = "Invalid token in path" });
+        }
+
+        var (status, response) = await accountService.GetUserInfoById(userId, token);
+        return status switch
+        {
+            GetUserInfoOutcomes.EmailNotFound => StatusCode(StatusCodes.Status404NotFound,
+                new ProblemDetails { Detail = "User not found or unauthorized" }),
+            GetUserInfoOutcomes.UserIsAdmin => StatusCode(StatusCodes.Status404NotFound,
+                new ProblemDetails { Detail = "Admin users don't have user details." }),
+            GetUserInfoOutcomes.UserNotInitialized => StatusCode(StatusCodes.Status404NotFound, new ProblemDetails
+                { Detail = "User is not initialized due to unknown reason." }),
+            GetUserInfoOutcomes.CreatorNotInitialized => StatusCode(StatusCodes.Status404NotFound, new ProblemDetails
+                { Detail = "Creator is not initialized due to unknown reason." }),
+            GetUserInfoOutcomes.Success => Ok(response),
+            _ => StatusCode(StatusCodes.Status500InternalServerError,
+                new ProblemDetails { Detail = "Unexpected error." })
+        };
+    }
 }

@@ -417,4 +417,41 @@ public class AccountService(
             Email = u.Email!
         }).ToList();
     }
+
+    public async Task<(GetUserInfoOutcomes, IGetUserResponse?)> GetUserInfoById(string userId, string token)
+    {
+        // Check if token is valid and user has appropriate role
+        var userStatus = CheckForUserPolicy(new CheckForPolicyRequest { Token = token });
+        var creatorStatus = CheckForCreatorPolicy(new CheckForPolicyRequest { Token = token });
+        if (userStatus != CheckForPolicyOutcomes.Success && creatorStatus != CheckForPolicyOutcomes.Success)
+        {
+            return (GetUserInfoOutcomes.EmailNotFound, null);
+        }
+
+        var user = await userManager.FindByIdAsync(userId);
+        if (user == null)
+        {
+            return (GetUserInfoOutcomes.EmailNotFound, null);
+        }
+
+        var roles = await userManager.GetRolesAsync(user);
+        var role = roles.FirstOrDefault();
+        switch (role)
+        {
+            case nameof(Roles.Admin):
+                return (GetUserInfoOutcomes.UserIsAdmin, null);
+            case nameof(Roles.User):
+                var appUser = await dbContext.AppUsers.FindAsync(user.Id);
+                return appUser == null
+                    ? (GetUserInfoOutcomes.UserNotInitialized, null)
+                    : (GetUserInfoOutcomes.Success, mapper.Map<UserInfoResponse>(appUser));
+            case nameof(Roles.Creator):
+                var creator = await dbContext.Creators.FindAsync(user.Id);
+                return creator == null
+                    ? (GetUserInfoOutcomes.CreatorNotInitialized, null)
+                    : (GetUserInfoOutcomes.Success, mapper.Map<UpdateCreatorRequest>(creator));
+            default:
+                return (GetUserInfoOutcomes.UserNotInitialized, null);
+        }
+    }
 }
