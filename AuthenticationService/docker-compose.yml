@@ -6,11 +6,16 @@ services:
       - "8086:8086"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Data Source=AuthenticationService.db;
+      - ConnectionStrings__DefaultConnection=Data Source=/data/AuthenticationService.db;
       - ASPNETCORE_URLS=http://+:8086
       - BackendSettings__BackendUrl=http://attireme-be:9494
+    volumes:
+      - auth-db-data:/data
     networks:
       - app-network
 
 networks:
   app-network:
+
+volumes:
+  auth-db-data:

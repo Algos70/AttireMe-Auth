@@ -343,7 +343,7 @@ public class AccountService(
                 var appUser = await dbContext.AppUsers.FindAsync(user.Id);
                 return appUser == null
                     ? (GetUserInfoOutcomes.UserNotInitialized, null)
-                    : (GetUserInfoOutcomes.Success, mapper.Map<UpdateUserRequest>(appUser));
+                    : (GetUserInfoOutcomes.Success, mapper.Map<UserInfoResponse>(appUser));
             case nameof(Roles.Creator):
                 var creator = await dbContext.Creators.FindAsync(user.Id);
                 return creator == null
@@ -408,9 +408,13 @@ public class AccountService(
         return UpdateUserInfoOutcomes.WrongUserType;
     }
 
-    public async Task<IList<string>> GetAllCreatorUserIds()
+    public async Task<IList<CreatorInfoResponse>> GetAllCreatorUserIds()
     {
         var creatorRole = await userManager.GetUsersInRoleAsync(Roles.Creator.ToString());
-        return creatorRole.Select(u => u.Id).ToList();
+        return creatorRole.Select(u => new CreatorInfoResponse
+        {
+            UserId = u.Id,
+            Email = u.Email!
+        }).ToList();
     }
 }
