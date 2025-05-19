@@ -341,14 +341,18 @@ public class AccountService(
                 return (GetUserInfoOutcomes.UserIsAdmin, null);
             case nameof(Roles.User):
                 var appUser = await dbContext.AppUsers.FindAsync(user.Id);
-                return appUser == null
-                    ? (GetUserInfoOutcomes.UserNotInitialized, null)
-                    : (GetUserInfoOutcomes.Success, mapper.Map<UserInfoResponse>(appUser));
+                if (appUser == null)
+                    return (GetUserInfoOutcomes.UserNotInitialized, null);
+                var userResponse = mapper.Map<UserInfoResponse>(appUser);
+                userResponse.Email = user.Email!;
+                return (GetUserInfoOutcomes.Success, userResponse);
             case nameof(Roles.Creator):
                 var creator = await dbContext.Creators.FindAsync(user.Id);
-                return creator == null
-                    ? (GetUserInfoOutcomes.CreatorNotInitialized, null)
-                    : (GetUserInfoOutcomes.Success, mapper.Map<CreatorInfoResponse>(creator));
+                if (creator == null)
+                    return (GetUserInfoOutcomes.CreatorNotInitialized, null);
+                var creatorResponse = mapper.Map<CreatorInfoResponse>(creator);
+                creatorResponse.Email = user.Email!;
+                return (GetUserInfoOutcomes.Success, creatorResponse);
             default:
                 return (GetUserInfoOutcomes.UserNotInitialized, null);
         }
