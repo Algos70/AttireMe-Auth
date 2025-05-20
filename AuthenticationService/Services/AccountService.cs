@@ -313,7 +313,15 @@ public class AccountService(
 
     public CheckForPolicyOutcomes CheckForUserPolicy(CheckForPolicyRequest request)
     {
-        return CheckForPolicy(request, Roles.User);
+        var result =  CheckForPolicy(request, Roles.User);
+        switch (result)
+        {
+            case CheckForPolicyOutcomes.Failure: 
+                var newResult = CheckForPolicy(request, Roles.Creator);
+                return newResult != CheckForPolicyOutcomes.Success ? result : newResult;
+            default:
+                return result;
+        }
     }
 
     public CheckForPolicyOutcomes CheckForCreatorPolicy(CheckForPolicyRequest request)
