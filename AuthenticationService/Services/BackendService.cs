@@ -25,7 +25,7 @@ public class BackendService : IBackendService
     {
         try
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(adminToken);
             
             var requestData = new 
             { 
