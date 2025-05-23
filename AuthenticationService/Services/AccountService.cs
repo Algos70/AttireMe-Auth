@@ -318,6 +318,11 @@ public class AccountService(
         {
             case CheckForPolicyOutcomes.Failure: 
                 var newResult = CheckForPolicy(request, Roles.Creator);
+                if (newResult == CheckForPolicyOutcomes.Failure)
+                {
+                    var latestResult = CheckForPolicy(request, Roles.Admin);
+                    return latestResult != CheckForPolicyOutcomes.Success ? result : latestResult;
+                }
                 return newResult != CheckForPolicyOutcomes.Success ? result : newResult;
             default:
                 return result;
