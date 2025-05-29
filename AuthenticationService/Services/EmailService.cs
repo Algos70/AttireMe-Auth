@@ -93,6 +93,8 @@ public class EmailService : IEmailService
                 Subject = "Email Confirmation",
                 Body = $@"<h1>Welcome to AttireMe!</h1>
                        <p>Please confirm your email by clicking the following link:</p>
+                       <p>If you are using a mobile device, you can also copy and paste the link into your browser.</p>
+                       <p>Link:{confirmationLink}</p>
                        <p><a href='{confirmationLink}'>Confirm Email</a></p>
                        <p>If you didn't request this, please ignore this email.</p>"
             };
