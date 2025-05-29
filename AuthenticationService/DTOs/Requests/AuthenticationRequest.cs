@@ -8,6 +8,6 @@ public class AuthenticationRequest
 
     [Required]
     [MinLength(8)]
-    [MaxLength(16)]
+    [MaxLength(100)]
     public string Password { get; set; }
 }
